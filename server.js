@@ -137,9 +137,9 @@ app.post('/api/fetch-google-sheet', async (req, res) => {
     }
     const spreadsheetId = match[1];
 
-    // Download as XLSX
-    const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx`;
-    console.log(`Fetching spreadsheet: ${exportUrl}`);
+    // Download as XLSX with cache buster timestamp to ensure live edits are immediately retrieved
+    const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx&_cb=${Date.now()}`;
+    console.log(`Fetching live spreadsheet: ${exportUrl}`);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
@@ -147,7 +147,9 @@ app.post('/api/fetch-google-sheet', async (req, res) => {
     const response = await fetch(exportUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
       }
     });
     clearTimeout(timeout);
@@ -163,7 +165,12 @@ app.post('/api/fetch-google-sheet', async (req, res) => {
     const result = parseWorkbook(buffer);
 
     console.log(`Parsed ${result.sheets.length} sheets: ${result.sheets.join(', ')}`);
-    res.json({ success: true, ...result });
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    res.json({ success: true, timestamp: Date.now(), ...result });
   } catch (err) {
     console.error('Fetch error:', err);
     if (err.name === 'AbortError') {

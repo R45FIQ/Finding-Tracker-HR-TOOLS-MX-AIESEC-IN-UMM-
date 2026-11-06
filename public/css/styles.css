@@ -1304,6 +1304,47 @@ svg { flex-shrink: 0; }
   border: 1px solid #feefc3;
 }
 
+/* Quick Revision Button on Table Rows */
+.ref-status-revisi-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.btn-quick-recheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a73e8;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.btn-quick-recheck svg {
+  color: #1a73e8;
+}
+
+.btn-quick-recheck:hover {
+  background: #e8f0fe;
+  color: #174ea6;
+  border-color: #aecbfa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(26,115,232,0.15);
+}
+
+.btn-quick-recheck:active {
+  transform: translateY(0);
+}
+
 /* Finding Note Column */
 .ref-note-lolos {
   color: #137333;

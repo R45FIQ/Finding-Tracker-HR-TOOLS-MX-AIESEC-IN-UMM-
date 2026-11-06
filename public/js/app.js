@@ -210,19 +210,22 @@
   window.appNav = appNav;
 
   // ==================== DATA FETCHING ====================
-  async function fetchSpreadsheet(url) {
+  async function fetchSpreadsheet(url, silent = false) {
     const targetUrl = url || state.config.googleSheetUrl;
     const statusPill = $('#sheet-sync-status');
     if (statusPill) {
       statusPill.className = 'count bg-warn';
-      statusPill.textContent = '⟳ Memuat...';
+      statusPill.textContent = '⟳ Memuat live...';
     }
 
     try {
       const res = await fetch('/api/fetch-google-sheet', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store'
+        },
+        body: JSON.stringify({ url: targetUrl, _t: Date.now() })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -232,15 +235,18 @@
 
       if (statusPill) {
         statusPill.className = 'count bg-ok';
-        statusPill.textContent = '● Terhubung';
+        statusPill.textContent = '● Terhubung (Live)';
       }
       state.connected = true;
-      toast(`Terhubung ke ${data.sheets.length} sheets spreadsheet`, 'success');
+      if (!silent) {
+        toast(`Data live berhasil dimuat (${data.sheets.length} sheets)`, 'success');
+      }
 
       // Auto trigger initial finding if not run yet
       if (!state.hasRunFinding) {
-        runFinding();
+        runFinding(false);
       }
+      return true;
     } catch (err) {
       console.error('Fetch error:', err);
       if (statusPill) {
@@ -248,6 +254,7 @@
         statusPill.textContent = '✕ Gagal';
       }
       toast(`Gagal memuat spreadsheet: ${err.message}`, 'error');
+      return false;
     }
   }
 
@@ -675,13 +682,8 @@
   }
   window.downloadStyledExcel = downloadStyledExcel;
 
-  // Run Finding Main Handler
-  async function runFinding() {
-    if (!state.rawData) {
-      toast('Spreadsheet belum selesai dimuat, tunggu sebentar...', 'warning');
-      return;
-    }
-
+  // Run Finding Main Handler - Always re-fetches live data first!
+  async function runFinding(forceLiveRefresh = true) {
     if (state.selectedDepts.size === 0) {
       toast('Pilih minimal satu departemen terlebih dahulu!', 'warning');
       return;
@@ -690,10 +692,27 @@
     const btn = $('#btn-run-finding');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Memproses finding...`;
+      btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite">🔄</span> Mengambil data live...`;
     }
 
     try {
+      // 1. RE-FETCH LATEST DATA FROM MASTER GOOGLE SPREADSHEET
+      // Any new revisions made in Google Sheets are immediately downloaded & re-audited!
+      if (forceLiveRefresh || !state.rawData) {
+        await fetchSpreadsheet(state.config.googleSheetUrl, true);
+      } else {
+        processSpreadsheetData();
+      }
+
+      if (!state.rawData) {
+        toast('Gagal memuat spreadsheet. Periksa koneksi atau URL sumber.', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite">⚡</span> Memeriksa kepatuhan...`;
+      }
+
       state.hasRunFinding = true;
       $('#finding-empty-state')?.classList.add('hidden');
       $('#finding-results-container')?.classList.remove('hidden');
@@ -707,6 +726,10 @@
       state.onlineSyncStatus = 'syncing';
       renderFindingView();
 
+      if (btn) {
+        btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite">☁️</span> Menyimpan ke spreadsheet...`;
+      }
+
       const syncResult = await syncToOnlineGoogleSheet(reportData);
       if (syncResult && syncResult.sheetUrl) {
         state.lastSavedSheetUrl = syncResult.sheetUrl;
@@ -717,7 +740,7 @@
       }
 
       renderFindingView();
-      toast(`✓ Finding selesai & tersimpan ke tab ${reportData.tabName}`, 'success');
+      toast(`✓ Data ter-update live! Tersimpan ke tab ${reportData.tabName}`, 'success');
     } catch (err) {
       console.error('Error during finding run:', err);
       toast('Terjadi kesalahan: ' + err.message, 'error');
@@ -729,6 +752,17 @@
       }
     }
   }
+
+  // Quick recheck revision for a specific person or row
+  async function quickRecheckRevision(name, btnEl) {
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerHTML = `<span>⏳</span> Mengecek...`;
+    }
+    toast(`Mengambil data live terbaru untuk memeriksa revisi ${name}...`, 'info');
+    await runFinding(true);
+  }
+  window.quickRecheckRevision = quickRecheckRevision;
 
   // ==================== RENDER: VIEW 1 — FINDING TRACKER ====================
   function renderFindingView() {
@@ -865,7 +899,13 @@
                     ` : r.status === 'Belum isi' ? `
                       <span class="ref-status-badge ref-status-empty">⏳ Belum isi</span>
                     ` : `
-                      <span class="ref-status-badge ref-status-revisi">⚠️ Perlu revisi</span>
+                      <div class="ref-status-revisi-wrap">
+                        <span class="ref-status-badge ref-status-revisi">⚠️ Perlu revisi</span>
+                        <button type="button" class="btn-quick-recheck" onclick="quickRecheckRevision('${escapeHtml(r.name)}', this)" title="Cek ulang apakah perbaikan sudah terisi di Google Sheets">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                          Cek Revisi
+                        </button>
+                      </div>
                     `}
                   </td>
 
