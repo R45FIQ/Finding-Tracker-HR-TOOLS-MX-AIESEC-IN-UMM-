@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Environment and local files
+.env
+.env.local
+*.log
+npm-debug.log*
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
