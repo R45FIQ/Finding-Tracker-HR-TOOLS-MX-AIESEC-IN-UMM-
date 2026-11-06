@@ -51,6 +51,25 @@ Aplikasi akan berjalan di:
 
 ---
 
+## 🌐 Cara Deploy ke Vercel (Gratis & Cepat)
+
+Karena repositori ini sudah terhubung ke GitHub, proses deploy ke Vercel sangat mudah:
+
+1. Buka dan login ke [Vercel](https://vercel.com/) (masuk menggunakan akun GitHub Anda).
+2. Di dashboard Vercel, klik tombol **"Add New..."** lalu pilih **"Project"**.
+3. Di daftar repositori GitHub Anda, cari **`Finding-Tracker-HR-TOOLS-MX-AIESEC-IN-UMM-`** lalu klik tombol **"Import"**.
+4. Pada bagian pengaturan proyek (*Project Settings*):
+   - **Framework Preset:** Biarkan `Other`
+   - **Root Directory:** `./` (default)
+   - **Build Command:** Biarkan kosong / default
+   - **Output Directory:** Biarkan default
+5. Klik tombol biru **"Deploy"**.
+6. Tunggu sekitar 30–60 detik hingga proses selesai. Vercel akan memberikan domain publik langsung (misal: `https://finding-tracker-hr-tools-mx-aiesec-in-umm.vercel.app/`).
+
+> **Catatan:** File `vercel.json` dan `api/index.js` sudah disiapkan secara otomatis sehingga backend API Express, parsing Google Sheet, pembuatan laporan Excel, dan frontend web akan langsung berjalan sebagai *Serverless Functions* di Vercel tanpa konfigurasi tambahan!
+
+---
+
 ## ⚙️ Pemasangan Google Apps Script Webhook
 
 Agar hasil finding otomatis tersimpan ke spreadsheet online:
@@ -91,3 +110,4 @@ Agar hasil finding otomatis tersimpan ke spreadsheet online:
 
 Dikembangkan untuk kebutuhan audit internal **Talent Management AIESEC in UMM**.
 All rights reserved © 2026 AIESEC in UMM.
+

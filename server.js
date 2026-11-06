@@ -497,13 +497,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n  ╔══════════════════════════════════════════════╗`);
-  console.log(`  ║   HR Tools Audit & Validation System         ║`);
-  console.log(`  ║   AIESEC in UMM — Talent Management          ║`);
-  console.log(`  ╠══════════════════════════════════════════════╣`);
-  console.log(`  ║   Server running at:                         ║`);
-  console.log(`  ║   → http://localhost:${PORT}                    ║`);
-  console.log(`  ╚══════════════════════════════════════════════╝\n`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n  ╔══════════════════════════════════════════════╗`);
+    console.log(`  ║   HR Tools Audit & Validation System         ║`);
+    console.log(`  ║   AIESEC in UMM — Talent Management          ║`);
+    console.log(`  ╠══════════════════════════════════════════════╣`);
+    console.log(`  ║   Server running at:                         ║`);
+    console.log(`  ║   → http://localhost:${PORT}                    ║`);
+    console.log(`  ╚══════════════════════════════════════════════╝\n`);
+  });
+}
 
